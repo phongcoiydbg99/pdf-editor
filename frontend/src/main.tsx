@@ -1,13 +1,10 @@
 import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
+import ReactDOM from 'react-dom'
 import { pdfjs } from 'react-pdf'
-import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import './index.css'
 import 'react-pdf/dist/Page/AnnotationLayer.css'
 import 'react-pdf/dist/Page/TextLayer.css'
 import App from './App.tsx'
-import { useEditorStore } from './state/editorStore.ts'
-import { createId } from './utils/file.ts'
 
 declare global {
   interface Window {
@@ -27,33 +24,15 @@ declare global {
   }
 }
 
-pdfjs.GlobalWorkerOptions.workerSrc = workerSrc
+// Set worker for react-pdf v7
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`
 
-if (import.meta.env.DEV) {
-  window.__PDF_EDITOR_TEST_HOOKS__ = {
-    placeImageOnPage: ({ imageId, pageIndex, x, y, widthRatio }) => {
-      const { addPlacement } = useEditorStore.getState().actions
-      addPlacement({
-        id: createId(),
-        imageId,
-        pageIndex,
-        x,
-        y,
-        widthRatio,
-      })
-    },
-    getState: () => {
-      const state = useEditorStore.getState()
-      return {
-        images: state.images.map(({ id }) => ({ id })),
-        placements: state.placements.map(({ id }) => ({ id })),
-      }
-    },
-  }
-}
+// Note: Test hooks will be set up after App mounts since we need EditorContext
+// This will be handled in a component if needed
 
-createRoot(document.getElementById('root')!).render(
+ReactDOM.render(
   <StrictMode>
     <App />
   </StrictMode>,
+  document.getElementById('root')!,
 )

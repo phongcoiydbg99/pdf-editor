@@ -1,6 +1,6 @@
 import type { ChangeEvent } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useEditorStore } from '../state/editorStore'
+import { useEditorStore, useEditorActions } from '../state/editorStore'
 import { fetchAsUint8Array, readFileAsArrayBuffer } from '../utils/file'
 
 const DEFAULT_PDF = {
@@ -10,8 +10,7 @@ const DEFAULT_PDF = {
 
 export const TopBar = () => {
   const inputRef = useRef<HTMLInputElement>(null)
-  const setPdf = useEditorStore((state) => state.actions.setPdf)
-  const setError = useEditorStore((state) => state.actions.setError)
+  const { setPdf, setError } = useEditorActions()
   const currentPdf = useEditorStore((state) => state.pdf)
   const [isUploading, setUploading] = useState(false)
   const [defaultError, setDefaultError] = useState<string>()

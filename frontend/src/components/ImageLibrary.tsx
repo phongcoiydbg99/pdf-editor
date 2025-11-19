@@ -1,8 +1,9 @@
 import type { ChangeEvent } from 'react'
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { useDrag } from 'react-dnd'
+import type { DragSourceMonitor } from 'react-dnd'
 import type { UploadedImage } from '../state/editorStore'
-import { useEditorStore } from '../state/editorStore'
+import { useEditorStore, useEditorActions } from '../state/editorStore'
 import { DragTypes } from '../constants/dragTypes'
 import {
   createId,
@@ -29,16 +30,17 @@ const DEFAULT_REMOTE_IMAGES = [
 ]
 
 const ImageItem = ({ image }: { image: UploadedImage }) => {
-  const [{ isDragging }, drag] = useDrag(
+  const dragSpec = useMemo(
     () => ({
       type: DragTypes.IMAGE,
-      item: { imageId: image.id },
-      collect: (monitor) => ({
+      item: { type: DragTypes.IMAGE, imageId: image.id },
+      collect: (monitor: DragSourceMonitor) => ({
         isDragging: monitor.isDragging(),
       }),
     }),
     [image.id],
   )
+  const [{ isDragging }, drag] = useDrag(dragSpec)
   const dragRef = useCallback(
     (node: HTMLDivElement | null) => {
       drag(node)
@@ -65,7 +67,7 @@ const ImageItem = ({ image }: { image: UploadedImage }) => {
 
 export const ImageLibrary = () => {
   const inputRef = useRef<HTMLInputElement>(null)
-  const addImages = useEditorStore((state) => state.actions.addImages)
+  const { addImages } = useEditorActions()
   const images = useEditorStore((state) => state.images)
   const [isUploading, setUploading] = useState(false)
   const [remoteLoadingId, setRemoteLoadingId] = useState<string | null>(null)

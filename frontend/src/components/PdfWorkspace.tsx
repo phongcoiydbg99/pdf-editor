@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Document, Page } from 'react-pdf'
 import { useDrop } from 'react-dnd'
+import type { DropTargetMonitor } from 'react-dnd'
 import { PDFDocument, PDFImage } from 'pdf-lib'
-import { useEditorStore } from '../state/editorStore'
+import { useEditorStore, useEditorActions } from '../state/editorStore'
 import { DragTypes } from '../constants/dragTypes'
 import {
   clamp,
@@ -15,9 +16,7 @@ const PdfPage = ({ pageNumber }: { pageNumber: number }) => {
   const pageIndex = pageNumber - 1
   const placements = useEditorStore((state) => state.placements)
   const images = useEditorStore((state) => state.images)
-  const addPlacement = useEditorStore((state) => state.actions.addPlacement)
-  const removePlacement = useEditorStore((state) => state.actions.removePlacement)
-  const updatePlacement = useEditorStore((state) => state.actions.updatePlacement)
+  const { addPlacement, removePlacement, updatePlacement } = useEditorActions()
   const pagePlacements = useMemo(
     () => placements.filter((placement) => placement.pageIndex === pageIndex),
     [placements, pageIndex],
@@ -30,10 +29,11 @@ const PdfPage = ({ pageNumber }: { pageNumber: number }) => {
   const [dragState, setDragState] = useState<{ id: string } | null>(null)
   const [resizeState, setResizeState] = useState<{ id: string; corner: 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight' } | null>(null)
 
-  const [{ isOver }, drop] = useDrop(
+  const dropSpec = useMemo(
     () => ({
       accept: DragTypes.IMAGE,
-      drop: (item: { imageId: string }, monitor) => {
+      drop: (item: any, monitor: DropTargetMonitor) => {
+        if (!item || !item.imageId) return
         const offset = monitor.getClientOffset()
         const node = frameRef.current
         if (!offset || !node) return
@@ -49,12 +49,13 @@ const PdfPage = ({ pageNumber }: { pageNumber: number }) => {
           widthRatio: 0.22,
         })
       },
-      collect: (monitor) => ({
+      collect: (monitor: DropTargetMonitor) => ({
         isOver: monitor.isOver(),
       }),
     }),
     [pageIndex, addPlacement],
   )
+  const [{ isOver }, drop] = useDrop(dropSpec)
 
   const cleanupResizeObserver = useCallback(() => {
     if (resizeObserverRef.current) {
@@ -224,8 +225,7 @@ export const PdfWorkspace = () => {
   const placements = useEditorStore((state) => state.placements)
   const images = useEditorStore((state) => state.images)
   const { isSaving, error } = useEditorStore((state) => state.ui)
-  const setSaving = useEditorStore((state) => state.actions.setSaving)
-  const setError = useEditorStore((state) => state.actions.setError)
+  const { setSaving, setError } = useEditorActions()
   const [numPages, setNumPages] = useState(0)
   const fileSource = useMemo(() => (pdf ? { data: pdf.data.slice() } : null), [pdf])
   const pageNumbers = useMemo(
